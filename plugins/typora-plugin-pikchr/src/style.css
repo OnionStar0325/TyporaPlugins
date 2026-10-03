@@ -1,0 +1,81 @@
+/**
+ * Typora Pikchr Plugin Stylesheet
+ * Integrates Pikchr diagrams seamlessly into Typora's live preview and themes.
+ */
+
+/* Diagram container */
+.typora-pikchr-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 1.2rem 0;
+  padding: 1rem;
+  background-color: var(--bg-color, #ffffff);
+  border-radius: 6px;
+  overflow-x: auto;
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.typora-pikchr-panel:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Rendered SVG elements */
+.typora-pikchr-panel svg,
+.typora-pikchr-panel .pikchr-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* View Mode (Cursor outside fence): Hide CodeMirror editor, show only rendered SVG */
+.md-fences.pikchr-preview-only .CodeMirror {
+  display: none !important;
+}
+
+.md-fences.pikchr-preview-only .md-fences-lang {
+  display: none !important;
+}
+
+/* Edit Mode (Focused): Show editor and live-preview underneath */
+.md-fences.pikchr-editing .typora-pikchr-panel {
+  border-top: 1px dashed var(--table-border-color, #e1e4e8);
+  margin-top: 0.8rem;
+  background-color: var(--item-hover-bg-color, rgba(0, 0, 0, 0.02));
+}
+
+/* Error message formatting */
+.typora-pikchr-error,
+.typora-pikchr-panel pre.pikchr-error {
+  color: #d9534f;
+  background-color: rgba(217, 83, 79, 0.08);
+  border-left: 4px solid #d9534f;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Dark theme adaptability */
+html.dark-mode .typora-pikchr-panel svg,
+body.dark-mode .typora-pikchr-panel svg,
+[theme="night"] .typora-pikchr-panel svg,
+[theme="dark"] .typora-pikchr-panel svg {
+  /* Auto invert or adapt lines for dark themes if needed */
+  filter: contrast(1.1) brightness(0.95);
+}
+
+@media (prefers-color-scheme: dark) {
+  .typora-pikchr-panel {
+    background-color: var(--bg-color, #1e1e1e);
+  }
+}

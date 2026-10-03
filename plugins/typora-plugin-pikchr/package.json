@@ -1,0 +1,23 @@
+{
+  "name": "typora-plugin-pikchr",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Typora plugin providing native rendering support for Pikchr diagrams",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node build.js",
+    "test": "node test/test.js && node test/test-bundle.mjs"
+  },
+  "keywords": [
+    "typora",
+    "typora-plugin",
+    "pikchr",
+    "diagram",
+    "markdown"
+  ],
+  "author": "OnionStar0325",
+  "license": "MIT",
+  "dependencies": {
+    "pikchr-js": "^0.1.4"
+  }
+}
