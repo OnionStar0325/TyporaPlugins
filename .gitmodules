@@ -1,0 +1,3 @@
+[submodule "plugins/typora-plugin-pikchr"]
+	path = plugins/typora-plugin-pikchr
+	url = https://github.com/OnionStar0325/typora-plugin-pikchr.git
