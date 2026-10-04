@@ -20,9 +20,9 @@ This repository serves as a centralized hub for developing, testing, and distrib
 
 ## 🧩 Plugins List
 
-| Plugin | Directory | Description | Status |
+| Plugin | Repository / Submodule | Description | Status |
 | :--- | :--- | :--- | :--- |
-| **[Typora Pikchr Plugin](plugins/typora-plugin-pikchr)** | [`plugins/typora-plugin-pikchr`](plugins/typora-plugin-pikchr) | Real-time [Pikchr](https://pikchr.org/) diagram rendering with an embedded WebAssembly engine. | ✅ Ready & Tested |
+| **[Typora Pikchr Plugin](https://github.com/OnionStar0325/typora-plugin-pikchr)** | [`plugins/typora-plugin-pikchr`](https://github.com/OnionStar0325/typora-plugin-pikchr) | Real-time [Pikchr](https://pikchr.org/) diagram rendering with an embedded WebAssembly engine. | ✅ [v0.1.0 Released](https://github.com/OnionStar0325/typora-plugin-pikchr/releases) |
 
 ---
 
@@ -45,47 +45,57 @@ Typora Pikchr plugin delivers real-time live preview rendering with native Light
 ```text
 TyporaPlugins/
 ├── .gitignore
+├── .gitmodules                                # Git submodules configuration
 ├── LICENSE                                    # MIT License
 ├── README.md                                  # Root Project Overview (This file)
 ├── doc_assets/                                # Documentation assets & guides (prefixed by plugin)
 │   ├── typora-plugin-pikchr-examples.md       # Official Pikchr examples for Typora
 │   ├── typora-plugin-pikchr-LightSamples.png  # Light theme screenshot
 │   └── typora-plugin-pikchr-DarkSamples.png   # Dark theme screenshot
-└── plugins/                                   # Plugins directory (standalone / submodules)
-    └── typora-plugin-pikchr/                  # Pikchr Diagram Plugin
+└── plugins/                                   # Plugins directory (managed via Git Submodules)
+    └── typora-plugin-pikchr/                  # [Submodule] -> https://github.com/OnionStar0325/typora-plugin-pikchr
         ├── manifest.json                      # Community loader descriptor
         ├── main.js                            # Built plugin entry point (Plugin subclass)
         ├── styles.css                         # Automatically loaded styles
         ├── package.json                       # Package metadata & build scripts
         ├── README.md                          # Plugin documentation & installation guide
-        ├── doc_assets/                        # Plugin-level doc assets (standalone names)
+        ├── doc_assets/                        # Plugin-level doc assets
         │   ├── examples.md                    # Packaged examples guide
         │   ├── LightSamples.png               # Light theme screenshot
         │   └── DarkSamples.png                # Dark theme screenshot
         ├── LICENSE                            # MIT License
         ├── build.js                           # Bundle build tool
-        ├── src/
-        │   ├── index.js                       # Plugin lifecycle & Typora integration
-        │   ├── renderer.js                    # DOM rendering engine & CodeMirror bridge
-        │   ├── settings.js                    # Settings Tab & options
-        │   ├── i18n.js                        # Multi-language dictionary
-        │   └── style.css                      # Base styling
-        └── test/
-            └── test.js                        # Test suite
+        ├── pack.js                            # Packaging tool (generates plugin.zip)
+        ├── src/                               # Core source modules
+        └── test/                              # Unit & bundle test suite
 ```
 
 ---
 
-## 🚀 Installing Plugins with Community Plugin Loader
+## 🚀 Installation & Setup
 
-To install any plugin from this repo into Typora (all plugins are pre-built with `main.js`, `manifest.json`, and `styles.css`):
+### Method 1: Community Plugin Marketplace (Recommended)
+1. Install [typora-community-plugin](https://github.com/typora-community-plugin/typora-community-plugin) in Typora.
+2. In Typora, open **Settings -> Community Plugins**.
+3. Search for **Pikchr Diagram Renderer** and click **Install**.
 
-1. Install [typora-community-plugin](https://github.com/typora-community-plugin/typora-community-plugin) in your Typora application.
-2. Copy the plugin directory (e.g. `plugins/typora-plugin-pikchr`) into your Typora plugin folder:
+### Method 2: Manual Installation (`plugin.zip`)
+1. Download `plugin.zip` from the plugin's [Releases](https://github.com/OnionStar0325/typora-plugin-pikchr/releases).
+2. Extract the folder into your Typora plugins directory:
    - **Windows**: `%APPDATA%\Typora\plugins\plugins\typora-plugin-pikchr\`
    - **macOS**: `~/Library/Application Support/abnerworks.Typora/plugins/plugins/typora-plugin-pikchr/`
    - **Linux**: `~/.config/Typora/plugins/plugins/typora-plugin-pikchr/`
-3. Enable the plugin from Typora Settings -> **Community Plugins**.
+3. Restart Typora and activate the plugin under **Settings -> Community Plugins**.
+
+---
+
+## 🛠️ Cloning with Submodules
+
+To clone this repository along with all submodules:
+
+```bash
+git clone --recurse-submodules https://github.com/OnionStar0325/TyporaPlugins.git
+```
 
 ---
 
