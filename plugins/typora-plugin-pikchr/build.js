@@ -17,7 +17,12 @@ console.log('📦 Building Typora Community Plugin: Pikchr Diagram Renderer...')
 
 const pikchrModulePath = path.join(pluginDir, 'node_modules', 'pikchr-js', 'pikchr.js');
 let pikchrJs = fs.readFileSync(pikchrModulePath, 'utf-8');
+pikchrJs = pikchrJs.replace('"use strict";var Module=', 'var PikchrModule=');
 pikchrJs = pikchrJs.replace('var ENVIRONMENT_IS_NODE=globalThis.process?.versions?.node&&globalThis.process?.type!="renderer";', 'var ENVIRONMENT_IS_NODE=false;');
+const splitMarker = ';return moduleRtn}})();';
+if (pikchrJs.includes(splitMarker)) {
+  pikchrJs = pikchrJs.split(splitMarker)[0] + splitMarker;
+}
 const modeJs = fs.readFileSync(path.join(srcDir, 'mode.js'), 'utf-8');
 const rendererJs = fs.readFileSync(path.join(srcDir, 'renderer.js'), 'utf-8');
 const styleCss = fs.readFileSync(path.join(pluginDir, 'styles.css'), 'utf-8');
@@ -109,9 +114,9 @@ class PikchrSettingTab {
       this.plugin.i18n.t('debounceLabel'),
       this.plugin.i18n.t('debounceDesc'),
       'number',
-      this.plugin.settings.debounceDelay,
+      this.plugin.pluginSettings.debounceDelay,
       async (val) => {
-        this.plugin.settings.debounceDelay = Math.max(0, parseInt(val, 10) || 30);
+        this.plugin.pluginSettings.debounceDelay = Math.max(0, parseInt(val, 10) || 30);
         await this.plugin.saveSettings();
       }
     );
@@ -121,9 +126,9 @@ class PikchrSettingTab {
       this.plugin.i18n.t('darkModeLabel'),
       this.plugin.i18n.t('darkModeDesc'),
       'checkbox',
-      this.plugin.settings.enableDarkModeAdjustment,
+      this.plugin.pluginSettings.enableDarkModeAdjustment,
       async (val) => {
-        this.plugin.settings.enableDarkModeAdjustment = Boolean(val);
+        this.plugin.pluginSettings.enableDarkModeAdjustment = Boolean(val);
         await this.plugin.saveSettings();
       }
     );
@@ -219,98 +224,123 @@ class FallbackPluginBase {
   }
 }
 
-let CommunityCodeblockProcessor = null;
-let CommunityHtmlProcessor = null;
-let CommunityPluginBase = FallbackPluginBase;
-
-if (typeof require === 'function') {
-  try {
-    const communityCore = require('typora-community-plugin');
-    if (communityCore) {
-      if (communityCore.Plugin) CommunityPluginBase = communityCore.Plugin;
-      if (communityCore.CodeblockPostProcessor) CommunityCodeblockProcessor = communityCore.CodeblockPostProcessor;
-      if (communityCore.HtmlPostProcessor) CommunityHtmlProcessor = communityCore.HtmlPostProcessor;
-    }
-  } catch (e) {}
-}
+const typoraCoreApi = (typeof window !== 'undefined' && window[Symbol.for('typora-plugin-core@v2')]) || {};
+let CommunityPluginBase = typoraCoreApi.Plugin || FallbackPluginBase;
+let CommunityCodeblockProcessor = typoraCoreApi.CodeblockPostProcessor || null;
 
 class PikchrPlugin extends CommunityPluginBase {
   constructor(app, manifest) {
-    super(app, manifest);
-    this.settings = Object.assign({}, PIKCHR_DEFAULT_SETTINGS);
-    this.i18n = pikchrI18n;
-    this.renderer = null;
-    this.domObserver = null;
-    this.themeObserver = null;
-    debugLog('PikchrPlugin instance created');
+    try {
+      super(app, manifest);
+      this.pluginSettings = Object.assign({}, PIKCHR_DEFAULT_SETTINGS);
+      this.i18n = pikchrI18n;
+      this.renderer = null;
+      this.domObserver = null;
+      this.themeObserver = null;
+      debugLog('PikchrPlugin instance created successfully');
+    } catch (e) {
+      debugLog('PikchrPlugin constructor ERROR:', e.message);
+      throw e;
+    }
   }
 
   async onload() {
     debugLog('PikchrPlugin.onload() started');
 
-    // 1. Inject Stylesheet
-    if (typeof document !== 'undefined') {
-      this.injectStyle();
-    }
-
-    // 2. Load Settings
-    await this.loadSettings();
-
-    // 3. Initialize WebAssembly Engine
-    this.renderer = new PikchrRenderer({
-      debounceDelay: this.settings.debounceDelay,
-      enableDarkModeAdjustment: this.settings.enableDarkModeAdjustment
-    });
-    
-    if (typeof window !== 'undefined') {
-      window.PikchrRendererInstance = this.renderer;
-    }
-
     try {
-      const loader = typeof PikchrModule === 'function' ? PikchrModule : (typeof window !== 'undefined' ? window.PikchrModule : null);
-      await this.renderer.init(loader);
-      debugLog('WASM engine ready in onload');
-    } catch(err) {
-      debugLog('WASM engine init ERROR:', err.message);
-    }
-
-    // 4. Register CodeMirror Syntax Highlighting & Typora Engine Integration
-    if (typeof registerPikchrMode === 'function') {
-      registerPikchrMode(this.renderer);
-    }
-
-    // 5. Register Setting Tab
-    this.addSettingTab(new PikchrSettingTab(this.app, this));
-
-    // 6. Register Workspace Events
-    const self = this;
-    if (this.app && this.app.workspace && typeof this.app.workspace.on === 'function') {
-      this.register(
-        this.app.workspace.on('file:open', () => {
-          debugLog('workspace file:open event fired');
-          setTimeout(() => self.processFencesInElement(document), 100);
-        })
-      );
-    }
-
-    // 7. Start real-time DOM observer, theme observer & input hooks
-    if (typeof document !== 'undefined') {
-      this.startObserver();
-      this.bindEditorEvents();
-
-      // Multi-stage scan
-      for (let i = 1; i <= 10; i++) {
-        setTimeout(() => self.processFencesInElement(document), i * 150);
+      // 1. Inject Stylesheet
+      if (typeof document !== 'undefined') {
+        this.injectStyle();
       }
-    }
 
-    // 8. Hook Typora Editor events
-    if (typeof window !== 'undefined' && window.editor && typeof window.editor.on === 'function') {
-      window.editor.on('edit', () => self.processFencesInElement(document));
-      window.editor.on('load', () => self.processFencesInElement(document));
-    }
+      // 2. Load Settings
+      await this.loadSettings();
 
-    debugLog('PikchrPlugin.onload() fully ready');
+      // 3. Initialize WebAssembly Engine
+      this.renderer = new PikchrRenderer({
+        debounceDelay: this.pluginSettings.debounceDelay,
+        enableDarkModeAdjustment: this.pluginSettings.enableDarkModeAdjustment
+      });
+      
+      if (typeof window !== 'undefined') {
+        window.PikchrRendererInstance = this.renderer;
+      }
+
+      try {
+        const loader = typeof PikchrModule === 'function' ? PikchrModule : (typeof window !== 'undefined' ? window.PikchrModule : null);
+        await this.renderer.init(loader);
+        debugLog('WASM engine ready in onload');
+      } catch(err) {
+        debugLog('WASM engine init ERROR:', err.message);
+      }
+
+      // 4. Register CodeMirror Syntax Highlighting & Typora Engine Integration
+      if (typeof registerPikchrMode === 'function') {
+        registerPikchrMode(this.renderer);
+      }
+
+      // 5. Register Community Plugin CodeblockPostProcessor
+      const self = this;
+      if (typeof this.registerMarkdownPostProcessor === 'function' && CommunityCodeblockProcessor) {
+        try {
+          const postProcessor = CommunityCodeblockProcessor.from({
+            lang: ['pikchr'],
+            exportPreview: true,
+            preview: async (code, codeblockEl) => {
+              const container = document.createElement('div');
+              container.className = 'typora-pikchr-preview';
+              const isDark = self.renderer ? self.renderer.isDarkMode() : false;
+              container.innerHTML = self.renderer ? self.renderer.render(code, 'pikchr-svg', isDark) : '';
+              return container;
+            }
+          });
+          this.registerMarkdownPostProcessor(postProcessor);
+          debugLog('Registered native CodeblockPostProcessor for pikchr');
+        } catch(e) {
+          debugLog('CodeblockPostProcessor registration error:', e.message);
+        }
+      }
+
+      // 6. Register Setting Tab
+      if (typeof this.addSettingTab === 'function') {
+        this.addSettingTab(new PikchrSettingTab(this.app, this));
+      } else if (typeof this.registerSettingTab === 'function') {
+        try {
+          this.registerSettingTab(new PikchrSettingTab(this.app, this));
+        } catch(e) {}
+      }
+
+      // 7. Register Workspace Events
+      if (this.app && this.app.workspace && typeof this.app.workspace.on === 'function') {
+        this.register(
+          this.app.workspace.on('file:open', () => {
+            debugLog('workspace file:open event fired');
+            setTimeout(() => self.processFencesInElement(document), 100);
+          })
+        );
+      }
+
+      // 8. Start real-time DOM observer, theme observer & input hooks
+      if (typeof document !== 'undefined') {
+        this.startObserver();
+        this.bindEditorEvents();
+
+        // Multi-stage initial scan
+        for (let i = 1; i <= 10; i++) {
+          setTimeout(() => self.processFencesInElement(document), i * 150);
+        }
+      }
+
+      // 9. Hook Typora Editor events
+      if (typeof window !== 'undefined' && window.editor && typeof window.editor.on === 'function') {
+        window.editor.on('edit', () => self.processFencesInElement(document));
+        window.editor.on('load', () => self.processFencesInElement(document));
+      }
+
+      debugLog('PikchrPlugin.onload() fully ready');
+    } catch(err) {
+      debugLog('PikchrPlugin.onload() ERROR:', err.message, err.stack);
+    }
   }
 
   injectStyle() {
@@ -450,18 +480,22 @@ class PikchrPlugin extends CommunityPluginBase {
   }
 
   async loadSettings() {
-    const loadedData = await this.loadData();
-    this.settings = Object.assign({}, PIKCHR_DEFAULT_SETTINGS, loadedData);
+    try {
+      const loadedData = await this.loadData();
+      this.pluginSettings = Object.assign({}, PIKCHR_DEFAULT_SETTINGS, loadedData);
+    } catch(e) {}
   }
 
   async saveSettings() {
-    await this.saveData(this.settings);
-    if (this.renderer) {
-      this.renderer.options.debounceDelay = this.settings.debounceDelay;
-      this.renderer.options.enableDarkModeAdjustment = this.settings.enableDarkModeAdjustment;
-      this.renderer.renderCache.clear();
-      this.processFencesInElement(document);
-    }
+    try {
+      await this.saveData(this.pluginSettings);
+      if (this.renderer) {
+        this.renderer.options.debounceDelay = this.pluginSettings.debounceDelay;
+        this.renderer.options.enableDarkModeAdjustment = this.pluginSettings.enableDarkModeAdjustment;
+        this.renderer.renderCache.clear();
+        this.processFencesInElement(document);
+      }
+    } catch(e) {}
   }
 }
 `;

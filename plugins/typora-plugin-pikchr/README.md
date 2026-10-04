@@ -55,18 +55,18 @@ box "Live Preview" fill 0xe8f5e9
 
 ## 📦 Installation & Setup
 
-### Using Typora Community Plugin Loader (Recommended)
-1. Install [typora-community-plugin](https://github.com/typora-community-plugin/typora-community-plugin) in Typora.
-2. Install dependencies and build the plugin:
-   ```bash
-   npm install
-   npm run build
-   ```
-3. Ensure the plugin folder is copied into Typora's plugins directory:
+### Method 1: Community Plugin Marketplace (Recommended)
+1. In Typora, open **Settings -> Community Plugins**.
+2. Search for **Pikchr Diagram Renderer** and click **Install**.
+3. Enable the plugin.
+
+### Method 2: Manual Installation (No Node.js / npm required)
+1. Download `plugin.zip` from the latest [Releases](https://github.com/OnionStar0325/TyporaPlugins/releases) or download/clone the `typora-plugin-pikchr` folder (pre-built with `main.js`, `manifest.json`, and `styles.css`).
+2. Copy the plugin folder into your Typora plugins directory:
    - **Windows**: `%APPDATA%\Typora\plugins\plugins\typora-plugin-pikchr\`
    - **macOS**: `~/Library/Application Support/abnerworks.Typora/plugins/plugins/typora-plugin-pikchr/`
    - **Linux**: `~/.config/Typora/plugins/plugins/typora-plugin-pikchr/`
-4. Restart Typora and activate in **Settings -> Community Plugins**.
+3. Restart Typora (or reload) and toggle the plugin **ON** in **Settings -> Community Plugins**.
 
 ---
 
@@ -81,6 +81,9 @@ npm run build
 
 # Run unit tests
 npm test
+
+# Package into plugin.zip for Community Marketplace release
+npm run pack # or pnpm run pack
 ```
 
 ---

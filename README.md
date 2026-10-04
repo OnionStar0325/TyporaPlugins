@@ -78,20 +78,14 @@ TyporaPlugins/
 
 ## 🚀 Installing Plugins with Community Plugin Loader
 
-To install any plugin from this repo into Typora:
+To install any plugin from this repo into Typora (all plugins are pre-built with `main.js`, `manifest.json`, and `styles.css`):
 
 1. Install [typora-community-plugin](https://github.com/typora-community-plugin/typora-community-plugin) in your Typora application.
-2. Install dependencies and build the target plugin:
-   ```bash
-   cd plugins/typora-plugin-pikchr
-   npm install
-   npm run build
-   ```
-3. Copy the plugin directory into your Typora plugin folder:
+2. Copy the plugin directory (e.g. `plugins/typora-plugin-pikchr`) into your Typora plugin folder:
    - **Windows**: `%APPDATA%\Typora\plugins\plugins\typora-plugin-pikchr\`
    - **macOS**: `~/Library/Application Support/abnerworks.Typora/plugins/plugins/typora-plugin-pikchr/`
    - **Linux**: `~/.config/Typora/plugins/plugins/typora-plugin-pikchr/`
-4. Enable the plugin from Typora Settings -> **Community Plugins**.
+3. Enable the plugin from Typora Settings -> **Community Plugins**.
 
 ---
 

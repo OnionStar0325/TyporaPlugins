@@ -9,6 +9,7 @@ pnpm-debug.log*
 # Build outputs & caches
 dist/
 build/
+*.zip
 .cache/
 *.wasm.map
 

@@ -8,6 +8,7 @@ const PIKCHR_FLAG_DARK_MODE = 0x02;
 class PikchrRenderer {
   constructor(options = {}) {
     this.module = null;
+    this.pikchrFn = null;
     this.initPromise = null;
     this.renderCache = new Map();
     this.debounceTimers = new Map();
@@ -18,8 +19,54 @@ class PikchrRenderer {
     }, options);
   }
 
+  createPikchr(module) {
+    function render(markup, svgClass = 'pikchr', flags = 0) {
+      const widthPtr = module._malloc(4);
+      const heightPtr = module._malloc(4);
+      let cstring = 0;
+
+      if (!widthPtr || !heightPtr) {
+        if (widthPtr) module._free(widthPtr);
+        if (heightPtr) module._free(heightPtr);
+        throw new Error('failed to allocate pikchr dimension pointers');
+      }
+
+      try {
+        module.setValue(widthPtr, 0, 'i32');
+        module.setValue(heightPtr, 0, 'i32');
+        cstring = module.ccall(
+          'pikchr',
+          'number',
+          ['string', 'string', 'number', 'number', 'number'],
+          [markup, svgClass, flags, widthPtr, heightPtr]
+        );
+        if (!cstring) {
+          throw new Error('pikchr returned NULL');
+        }
+        return {
+          svg: module.UTF8ToString(cstring),
+          width: module.getValue(widthPtr, 'i32'),
+          height: module.getValue(heightPtr, 'i32'),
+        };
+      } finally {
+        if (cstring) module._free(cstring);
+        module._free(widthPtr);
+        module._free(heightPtr);
+      }
+    }
+
+    const pikchr = (markup, svgClass = 'pikchr', flags = 0, _height, _width) =>
+      render(markup, svgClass, flags).svg;
+    pikchr.render = render;
+    pikchr.flags = {
+      PLAINTEXT_ERRORS: 0x0001,
+      DARK_MODE: 0x0002,
+    };
+    return pikchr;
+  }
+
   async init(loader) {
-    if (this.module) return this.module;
+    if (this.pikchrFn) return this.pikchrFn;
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = (async () => {
@@ -41,11 +88,19 @@ class PikchrRenderer {
           moduleLoader = window.Module;
         }
       }
+
       if (typeof moduleLoader === 'function') {
         const mod = await moduleLoader();
         this.module = mod;
+        if (typeof mod === 'function' && mod.render) {
+          this.pikchrFn = mod;
+        } else if (mod && typeof mod._malloc === 'function') {
+          this.pikchrFn = this.createPikchr(mod);
+        } else if (typeof mod === 'function') {
+          this.pikchrFn = mod;
+        }
         console.log('[Pikchr-Renderer] WebAssembly engine loaded successfully.');
-        return mod;
+        return this.pikchrFn;
       }
       throw new Error('Pikchr WebAssembly module loader not found.');
     })();
@@ -125,7 +180,7 @@ class PikchrRenderer {
   }
 
   render(source, className = 'pikchr-svg', forceDarkMode = null) {
-    if (!this.module) {
+    if (!this.pikchrFn && !this.module) {
       return '<div class="typora-pikchr-loading" style="padding:6px;color:#888;">Pikchr engine initializing...</div>';
     }
     if (!source || !source.trim()) {
@@ -137,15 +192,13 @@ class PikchrRenderer {
 
     try {
       let svg = '';
-      if (typeof this.module === 'function') {
-        svg = this.module(source, className, flags);
-      } else if (this.module && typeof this.module.ccall === 'function') {
-        svg = this.module.ccall(
-          'pikchr',
-          'string',
-          ['string', 'string', 'number', 'number', 'number'],
-          [source, className, flags, 0, 0]
-        );
+      if (typeof this.pikchrFn === 'function') {
+        svg = this.pikchrFn(source, className, flags);
+      } else if (this.module && typeof this.module._malloc === 'function') {
+        if (!this.pikchrFn) {
+          this.pikchrFn = this.createPikchr(this.module);
+        }
+        svg = this.pikchrFn(source, className, flags);
       }
       return svg || '';
     } catch (err) {
@@ -217,7 +270,7 @@ class PikchrRenderer {
     const clone = fenceEl.cloneNode(true);
     const lang = clone.querySelector('.md-fences-lang');
     if (lang) lang.remove();
-    const panel = clone.querySelector('.typora-pikchr-container, .md-diagram-panel');
+    const panel = clone.querySelector('.typora-pikchr-container, .md-diagram-panel, .pikchr-diagram-preview, .typora-pikchr-preview');
     if (panel) panel.remove();
     return clone.textContent || '';
   }

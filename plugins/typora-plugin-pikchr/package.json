@@ -6,6 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "build": "node build.js",
+    "postinstall": "node build.js",
+    "pack": "node build.js && node pack.js",
     "test": "node test/test.js && node test/test-bundle.mjs"
   },
   "keywords": [
@@ -19,5 +21,8 @@
   "license": "MIT",
   "dependencies": {
     "pikchr-js": "^0.1.4"
+  },
+  "devDependencies": {
+    "adm-zip": "^0.6.1"
   }
 }

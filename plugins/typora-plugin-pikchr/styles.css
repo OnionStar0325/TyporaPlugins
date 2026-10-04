@@ -53,12 +53,22 @@
 .md-diagram-panel-preview .pikchr-svg,
 .md-diagram-panel-preview svg,
 .typora-pikchr-container .pikchr-svg,
-.typora-pikchr-container svg {
+.typora-pikchr-container svg,
+.typora-pikchr-preview svg,
+.pikchr-diagram-preview svg {
   display: block !important;
   max-width: 100% !important;
   height: auto !important;
   margin: 0 auto !important;
   cursor: pointer;
+}
+
+.typora-pikchr-preview,
+.pikchr-diagram-preview {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 /* Standalone Fallback Container */
